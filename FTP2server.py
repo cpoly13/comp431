@@ -7,11 +7,13 @@
 # Example2: INPUT: PASSabc OUTPUT: ERROR -- Command
 
 # start by getting input and break into list of separate lines,
+import shutil
 import sys
 
 sys.stdout.write("220 COMP 431 FTP server ready.\r\n")
 input = sys.stdin.read()
 ftpInputs = input.splitlines(keepends=True)
+fileRetrCount=1
 
 # get number of lines to use as number of iterations for main loop
 numberOfLines = len(ftpInputs)
@@ -165,30 +167,48 @@ while currentLine < numberOfLines:
             if ord(ftpInput[-1]) != 10 or ord(ftpInput[-2]) != 13:
                 sys.stdout.write("Syntax error in parameter.\r\n")
                 commandOk = False
-            elif len(command[1])!= 11:
+            elif len(command[1].split(","))!= 6:
                 sys.stdout.write("Syntax error in parameter.\r\n")
                 commandOk=False
             else:
-                for x in range(0,10):
-                    if x%2==0:
-                        if command[1][x].isdigit()==False:
-                            sys.stdout.write("Syntax error in parameter.\r\n")
-                            commandOk=False
-                            break
-                    else:
-                        if command[1][x]!=",":
-                            sys.stdout.write("Syntax error in parameter.\r\n")
-                            commandOk=False
-                            break
+                ipNumbers=command[1].split(",")
+                for x in range(0,5):
+
+                    if not ipNumbers[x].isdigit():
+                        sys.stdout.write("Syntax error in parameter.\r\n")
+                        commandOk=False
+                        break
 
         if commandOk == True:
-
-            ipAddress=(command[1][0]+"."+command[1][2]+"."+command[1][4]+"."+command[1][6]
-            +"."+command[1][8]+"."+command[1][10])
+            portAddress=int(ipNumbers[4])*256+int(ipNumbers[5])
+            ipAddress=(ipNumbers[0]+"."+ipNumbers[1]+"."+ipNumbers[2]+"."+ipNumbers[3]
+            +"."+str(portAddress))
 
             sys.stdout.write("200 Port command successful ("+ipAddress+")\r\n")
+    #RETR command tests and file copy if correct syntax
+    elif command[0].lower() == "retr":
+        if listLength < 2:
+            if ftpInput[4] == ' ':
+                sys.stdout.write("Syntax error in parameter.\r\n")
+            else:
+                sys.stdout.write("500 Syntax error, command unrecognized.\r\n")
+            commandOk = False
+        else:
+            for c in testString:
+                if ord(c) > 127 or (ord(c) == 13 or ord(c) == 10):
+                    sys.stdout.write("Syntax error in parameter.\r\n")
+                    commandOk = False
+                    break
+            if ord(ftpInput[-1]) != 10 or ord(ftpInput[-2]) != 13:
+                sys.stdout.write("Syntax error in parameter.\r\n")
+                commandOk = False
+        if commandOk == True:
+            if command[1][0]=="/" or ord(command[1][0])==92:
+                command[1]=command[1][1:]
 
-
+            shutil.copyfile(command[1],"retr_files/file"+str(fileRetrCount))
+            fileRetrCount=fileRetrCount+1
+            sys.stdout.write("150 File status okay.\r\n")
     else:
         sys.stdout.write("500 Syntax error, command unrecognized.\r\n")
         commandOk = False
