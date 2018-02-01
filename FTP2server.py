@@ -150,8 +150,31 @@ while currentLine < numberOfLines:
 
     # PORT command tests
     elif command[0].lower() == "port":
-        x = 1
-        # TODO implement tests and output
+        if listLength < 2:
+            if ftpInput[4] == ' ':
+                sys.stdout.write("Syntax error in parameter.\r\n")
+            else:
+                sys.stdout.write("500 Syntax error, command unrecognized.\r\n")
+            commandOk = False
+        else:
+            for c in testString:
+                if ord(c) > 127 or (ord(c) == 13 or ord(c) == 10):
+                    sys.stdout.write("Syntax error in parameter.\r\n")
+                    commandOk = False
+                    break
+            if ord(ftpInput[-1]) != 10 or ord(ftpInput[-2]) != 13:
+                sys.stdout.write("Syntax error in parameter.\r\n")
+                commandOk = False
+            elif len(command[0])!= 11:
+                sys.stdout.write("Syntax error in parameter.\r\n")
+                commandOk=False
+
+
+
+        if commandOk == True:
+
+            sys.stdout.write("200 Port command successful ()\r\n")
+
 
     else:
         sys.stdout.write("500 Syntax error, command unrecognized.\r\n")
