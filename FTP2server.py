@@ -165,15 +165,28 @@ while currentLine < numberOfLines:
             if ord(ftpInput[-1]) != 10 or ord(ftpInput[-2]) != 13:
                 sys.stdout.write("Syntax error in parameter.\r\n")
                 commandOk = False
-            elif len(command[0])!= 11:
+            elif len(command[1])!= 11:
                 sys.stdout.write("Syntax error in parameter.\r\n")
                 commandOk=False
-
-
+            else:
+                for x in range(0,10):
+                    if x%2==0:
+                        if command[1][x].isdigit()==False:
+                            sys.stdout.write("Syntax error in parameter.\r\n")
+                            commandOk=False
+                            break
+                    else:
+                        if command[1][x]!=",":
+                            sys.stdout.write("Syntax error in parameter.\r\n")
+                            commandOk=False
+                            break
 
         if commandOk == True:
 
-            sys.stdout.write("200 Port command successful ()\r\n")
+            ipAddress=(command[1][0]+"."+command[1][2]+"."+command[1][4]+"."+command[1][6]
+            +"."+command[1][8]+"."+command[1][10])
+
+            sys.stdout.write("200 Port command successful ("+ipAddress+")\r\n")
 
 
     else:
