@@ -6,17 +6,20 @@
 # Example1: INPUT: USER Chris OUTPUT: Command ok
 # Example2: INPUT: PASSabc OUTPUT: ERROR -- Command
 
-# start by getting input and break into list of separate lines,
 import shutil
 import sys
 
+# start by getting input and break into list of separate lines,
 sys.stdout.write("220 COMP 431 FTP server ready.\r\n")
 input = sys.stdin.read()
 ftpInputs = input.splitlines(keepends=True)
-fileRetrCount=1
+
 
 # get number of lines to use as number of iterations for main loop
 numberOfLines = len(ftpInputs)
+#set counters for states that need to be maintained across iterations
+fileRetrCount=1
+currentState=0
 currentLine = 0
 
 # Main program body executes for each line of input,
@@ -212,8 +215,5 @@ while currentLine < numberOfLines:
     else:
         sys.stdout.write("500 Syntax error, command unrecognized.\r\n")
         commandOk = False
-    # Old code, tentatively delete
-    # if commandOk==True:
-    #    print("Command ok")
 
     currentLine += 1
