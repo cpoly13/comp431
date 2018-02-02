@@ -1,34 +1,62 @@
-# Purpose of program is to determine if a command received
-# as a text string is a valid FTP command and characters adhere to ascii standard
-# Commands are input as strings to standard in console in Linux enviroment
+# Purpose of program is to parse FTP commands and to begin processing file data
+# Commands are tested as a valid FTP command that is also valid for the current program state
+# Characters must adhere to ascii standard
+# Commands are input as strings to standard in console in Linux environment
 # Correctness is output to standard output
 
-# Example1: INPUT: USER Chris OUTPUT: Command ok
-# Example2: INPUT: PASSabc OUTPUT: ERROR -- Command
+# Example:
+# Input:
+
+# USER anonymous
+#PASS foobar
+#SYST
+#TYPE I
+#PORT 152,2,131,205,31,144
+#RETR pictures/jasleen.jpg
+#QUIT
+
+#Output:
+#220 COMP 431 FTP server ready.
+#USER anonymous
+#331 Guest access OK, send password.
+#PASS foobar
+#230 Guest login OK.
+#SYST
+#215 UNIX Type: L8.
+#TYPE I
+#200 Type set to I.
+#PORT 152,2,131,205,31,144
+#200 Port command successful (152.2.131.205,8080).
+#RETR pictures/jasleen.jpg
+#150 File status okay.
+#250 Requested file action completed.
+#QUIT
+#200 Command OK.
+
 
 import shutil
 import sys
-
-# start by getting input and break into list of separate lines,
 from pathlib import Path
 
 sys.stdout.write("220 COMP 431 FTP server ready.\r\n")
+
+# Get input and break into list of separate lines
 input = sys.stdin.read()
 ftpInputs = input.splitlines(keepends=True)
 
 
-# get number of lines to use as number of iterations for main loop
+# iterations for main loop
 numberOfLines = len(ftpInputs)
+
 #set counters for states that need to be maintained across iterations
-fileRetrCount=1
 currentState=0
+fileRetrCount=1
 currentLine = 0
 
-# Main program body executes for each line of input,
-# and tests for line adhering to FTP command protocol
-# Outputs appropriate message as to whether command is valid
+# Main program body executes for each line of input
+# Outputs appropriate message and executes appropriate action
 # For each loop the invariant holds that one line of input is being analyzed
-# for correctness. Each iteration moves on to the next FTP command line
+# for correctness.
 while currentLine < numberOfLines:
 
     # set specific ftp command line
@@ -37,8 +65,10 @@ while currentLine < numberOfLines:
     testString = ftpInput[:-2]
 
     sys.stdout.write(ftpInput)
+
     # Split tokens to be tested individually for correctness depending on location
     command = ftpInput.split()
+
     # for testing that number of tokens are correct for command
     listLength = len(command)
     commandOk = True
@@ -47,45 +77,45 @@ while currentLine < numberOfLines:
         sys.stdout.write("500 Syntax error, command unrecognized.\r\n")
         commandOk = False
 
-    # USER command tests
+    # USER command actions
     if command[0].lower() == "user":
 
         if listLength < 2:
             if ftpInput[4] == ' ':
-                sys.stdout.write("Syntax error in parameter.\r\n")
+                sys.stdout.write("501 Syntax error in parameter.\r\n")
             else:
                 sys.stdout.write("500 Syntax error, command unrecognized.\r\n")
             commandOk = False
         else:
             for c in testString:
                 if ord(c) > 127 or (ord(c) == 13 or ord(c) == 10):
-                    sys.stdout.write("Syntax error in parameter.\r\n")
+                    sys.stdout.write("501 Syntax error in parameter.\r\n")
                     commandOk = False
                     break
             if ord(ftpInput[-1]) != 10 or ord(ftpInput[-2]) != 13:
-                sys.stdout.write("Syntax error in parameter.\r\n")
+                sys.stdout.write("501 Syntax error in parameter.\r\n")
                 commandOk = False
         if commandOk == True:
             currentState=1
             sys.stdout.write("331 Guest access OK, send password.\r\n")
 
-    # PASS command tests
+    # PASS command actions
     elif command[0].lower() == "pass":
         if currentState == 1:
             if listLength < 2:
                 if ftpInput[4] == ' ':
-                    sys.stdout.write("Syntax error in parameter.\r\n")
+                    sys.stdout.write("501 Syntax error in parameter.\r\n")
                 else:
                     sys.stdout.write("500 Syntax error, command unrecognized.\r\n")
                 commandOk = False
             else:
                 for c in testString:
                     if ord(c) > 127 or (ord(c) == 13 or ord(c) == 10):
-                        sys.stdout.write("Syntax error in parameter.\r\n")
+                        sys.stdout.write("501 Syntax error in parameter.\r\n")
                         commandOk = False
                         break
                 if ord(ftpInput[-1]) != 10 or ord(ftpInput[-2]) != 13:
-                    sys.stdout.write("Syntax error in parameter.\r\n")
+                    sys.stdout.write("501 Syntax error in parameter.\r\n")
                     commandOk = False
             if commandOk == True:
                 sys.stdout.write("230 Guest login OK.\r\n")
@@ -96,144 +126,144 @@ while currentLine < numberOfLines:
         else:
             sys.stdout.write("503 Bad sequence of commands.\r\n")
 
-
-
-    # TYPE command tests
+    # TYPE command actions
     elif command[0].lower() == "type":
         if currentState>=2:
             if listLength < 2:
-                sys.stdout.write("Syntax error in parameter.\r\n")
+                sys.stdout.write("501 Syntax error in parameter.\r\n")
                 commandOk = False
             else:
                 if command[1] == "A":
                     index = ftpInput.find('A')
                     if len(ftpInput) != index + 3 or ord(ftpInput[index + 1]) != 13 or ord(ftpInput[index + 2]) != 10:
-                        sys.stdout.write("Syntax error in parameter.\r\n")
+                        sys.stdout.write("501 Syntax error in parameter.\r\n")
                         commandOk = False
                     else:
                         sys.stdout.write("200 Type set to A.\r\n")
                 elif command[1] == "I":
                     index = ftpInput.find('I')
                     if len(ftpInput) != index + 3 or ord(ftpInput[index + 1]) != 13 or ord(ftpInput[index + 2]) != 10:
-                        sys.stdout.write("Syntax error in parameter.\r\n")
+                        sys.stdout.write("501 Syntax error in parameter.\r\n")
                         commandOk = False
                     else:
                         sys.stdout.write("200 Type set to I.\r\n")
                 else:
-                    sys.stdout.write("Syntax error in parameter.\r\n")
+                    sys.stdout.write("501 Syntax error in parameter.\r\n")
                     commandOk = False
         else:
             sys.stdout.write("530 Not logged in.\r\n")
 
-    # SYST command tests
+    # SYST command actions
     elif command[0].lower() == "syst":
         if currentState>=2:
             if listLength != 1:
-                sys.stdout.write("Syntax error in parameter.\r\n")
+                sys.stdout.write("501 Syntax error in parameter.\r\n")
                 commandOk = False
             elif len(ftpInput) != 6:
-                sys.stdout.write("Syntax error in parameter.\r\n")
+                sys.stdout.write("501 Syntax error in parameter.\r\n")
                 commandOk = False
             elif ord(ftpInput[4]) != 13 or ord(ftpInput[5]) != 10:
-                sys.stdout.write("Syntax error in parameter.\r\n")
+                sys.stdout.write("501 Syntax error in parameter.\r\n")
                 commandOk = False
             else:
-                sys.stdout.write("UNIX Type: L8.\r\n")
+                sys.stdout.write("215 UNIX Type: L8.\r\n")
         else:
             sys.stdout.write("530 Not logged in.\r\n")
 
-    # NOOP command tests
+    # NOOP command actions
     elif command[0].lower() == "noop":
         if currentState>=2:
             if listLength != 1:
-                sys.stdout.write("Syntax error in parameter.\r\n")
+                sys.stdout.write("501 Syntax error in parameter.\r\n")
                 commandOk = False
             elif len(ftpInput) != 6:
-                sys.stdout.write("Syntax error in parameter.\r\n")
+                sys.stdout.write("501 Syntax error in parameter.\r\n")
                 commandOk = False
             elif ord(ftpInput[4]) != 13 or ord(ftpInput[5]) != 10:
-                sys.stdout.write("Syntax error in parameter.\r\n")
+                sys.stdout.write("501 Syntax error in parameter.\r\n")
                 commandOk = False
             else:
                 sys.stdout.write("200 Command OK.\r\n")
         else:
             sys.stdout.write("530 Not logged in.\r\n")
 
-
-
-    # QUIT command tests
+    # QUIT command actions
     elif command[0].lower() == "quit":
         if listLength != 1:
-            sys.stdout.write("Syntax error in parameter.\r\n")
+            sys.stdout.write("501 Syntax error in parameter.\r\n")
             commandOk = False
         elif len(ftpInput) != 6:
-            sys.stdout.write("Syntax error in parameter.\r\n")
+            sys.stdout.write("501 Syntax error in parameter.\r\n")
             commandOk = False
         elif ord(ftpInput[4]) != 13 or ord(ftpInput[5]) != 10:
-            sys.stdout.write("Syntax error in parameter.\r\n")
+            sys.stdout.write("501 Syntax error in parameter.\r\n")
             commandOk = False
         else:
             currentState=-1
             sys.stdout.write("200 Command OK.\r\n")
 
-    # PORT command tests
+    # PORT command actions
     elif command[0].lower() == "port":
         if currentState>=2:
             if listLength < 2:
                 if ftpInput[4] == ' ':
-                    sys.stdout.write("Syntax error in parameter.\r\n")
+                    sys.stdout.write("501 Syntax error in parameter.\r\n")
                 else:
                     sys.stdout.write("500 Syntax error, command unrecognized.\r\n")
                 commandOk = False
             else:
                 for c in testString:
                     if ord(c) > 127 or (ord(c) == 13 or ord(c) == 10):
-                        sys.stdout.write("Syntax error in parameter.\r\n")
+                        sys.stdout.write("501 Syntax error in parameter.\r\n")
                         commandOk = False
                         break
                 if ord(ftpInput[-1]) != 10 or ord(ftpInput[-2]) != 13:
-                    sys.stdout.write("Syntax error in parameter.\r\n")
+                    sys.stdout.write("501 Syntax error in parameter.\r\n")
                     commandOk = False
                 elif len(command[1].split(","))!= 6:
-                    sys.stdout.write("Syntax error in parameter.\r\n")
+                    sys.stdout.write("501 Syntax error in parameter.\r\n")
                     commandOk=False
                 else:
                     ipNumbers=command[1].split(",")
                     for x in range(0,5):
 
                         if not ipNumbers[x].isdigit():
-                            sys.stdout.write("Syntax error in parameter.\r\n")
+                            sys.stdout.write("501 Syntax error in parameter.\r\n")
                             commandOk=False
+                            break
+                        elif int(ipNumbers[x])<0 or int(ipNumbers[x])>255:
+                            sys.stdout.write("501 Syntax error in parameter.\r\n")
+                            commandOk = False
                             break
 
             if commandOk == True:
                 portAddress=int(ipNumbers[4])*256+int(ipNumbers[5])
                 ipAddress=(ipNumbers[0]+"."+ipNumbers[1]+"."+ipNumbers[2]+"."+ipNumbers[3]
-                +"."+str(portAddress))
+                +","+str(portAddress))
                 currentState=3
-                sys.stdout.write("200 Port command successful ("+ipAddress+")\r\n")
+                sys.stdout.write("200 Port command successful ("+ipAddress+").\r\n")
         else:
             sys.stdout.write("530 Not logged in.\r\n")
 
 
 
-    #RETR command tests and file copy if correct syntax
+    #RETR command actions and file copy if correct syntax
     elif command[0].lower() == "retr":
         if currentState==3:
             if listLength < 2:
                 if ftpInput[4] == ' ':
-                    sys.stdout.write("Syntax error in parameter.\r\n")
+                    sys.stdout.write("501 Syntax error in parameter.\r\n")
                 else:
                     sys.stdout.write("500 Syntax error, command unrecognized.\r\n")
                 commandOk = False
             else:
                 for c in testString:
                     if ord(c) > 127 or (ord(c) == 13 or ord(c) == 10):
-                        sys.stdout.write("Syntax error in parameter.\r\n")
+                        sys.stdout.write("501 Syntax error in parameter.\r\n")
                         commandOk = False
                         break
                 if ord(ftpInput[-1]) != 10 or ord(ftpInput[-2]) != 13:
-                    sys.stdout.write("Syntax error in parameter.\r\n")
+                    sys.stdout.write("501 Syntax error in parameter.\r\n")
                     commandOk = False
             if commandOk == True:
                 if command[1][0]=="/" or ord(command[1][0])==92:
@@ -257,6 +287,7 @@ while currentLine < numberOfLines:
         sys.stdout.write("500 Syntax error, command unrecognized.\r\n")
         commandOk = False
 
+    # For QUIT command
     if currentState==-1:
         break
     currentLine += 1
