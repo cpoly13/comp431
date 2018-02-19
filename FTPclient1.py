@@ -113,26 +113,5 @@ for line in sys.stdin:
         sys.stdout.write("QUIT\r\n")
         break
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     else:
         error()
-
-
-
-
