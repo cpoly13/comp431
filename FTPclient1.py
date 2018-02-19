@@ -11,30 +11,31 @@ def testServerHost(s):
     if s[0].isalpha() is False:
         return False
     for c in s:
-        if c.isdigit() is False or c.isalpha() is False:
+        if (ord(c) <48 or ord(c)>57) and (ord(c)<65 or ord(c)>90) and (ord(c)<97 or ord(c)>122):
             return False
     return True
 
 def testServerPort(s):
     if len(s) > 5:
-        error("server-port")
+        return False
     for c in s:
         if not c.isdigit():
             return False
-    if s>65535:
+    if int(s)>65535:
         return False
+    return True
 
 def formatPortNum(num):
 
     remainder=portNumber%256
     divNum=int (num/256)
 
-    return divNum+","+remainder
+    return str(divNum)+","+ str(remainder)
 
 
 
 connected=False
-portNumber=80000
+portNumber=8000
 
 for line in sys.stdin:
     sys.stdout.write(line)
@@ -46,8 +47,8 @@ for line in sys.stdin:
 
         commandGood=True
 
-        if commandLength != 3:
-            error()
+        if commandLength < 2:
+            error("server-host")
             commandGood = False
 
         serverInput=command[1].split(".")
@@ -62,6 +63,10 @@ for line in sys.stdin:
         if not commandGood:
             continue
 
+        if commandLength!=3:
+            error("server-port")
+            continue
+
         if not testServerPort(command[2]):
             error("server-port")
             continue
@@ -74,6 +79,8 @@ for line in sys.stdin:
         sys.stdout.write("PASS guest@\r\n")
         sys.stdout.write("SYST\r\n")
         sys.stdout.write("TYPE I\r\n")
+
+        portNumber=8000
 
     elif command[0]=="GET":
         commandGood=True
@@ -105,11 +112,11 @@ for line in sys.stdin:
 
     elif command[0]== "QUIT":
 
-        if len(line)!= 4:
+        if len(line)!= 5:
             error()
             continue
 
-        print("Quit accepted, terminating FTP client")
+        print("QUIT accepted, terminating FTP client")
         sys.stdout.write("QUIT\r\n")
         break
 
