@@ -72,6 +72,9 @@ def testServerPort(s):
         return False
     return True
 
+def error(token):
+    print("ERROR -- " + token)
+
 
 # Convert to decimal values contained in high and low order bytes of
 # 16 bit binary representation of an integer in 2's compliment
@@ -84,6 +87,7 @@ def formatPortNum(num):
 
 connected = False
 # default starting port number
+welcomePortNumber = int(sys.argv[1])
 portNumber = 8000
 
 for line in sys.stdin:
@@ -122,7 +126,13 @@ for line in sys.stdin:
             error("server-port")
             continue
         # Valid connection, set connection as active
+        s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect(command[1],int(command[2]))
+        response=s.recv(4096)
+        responseString=response.decode()
+
         connected = True
+
         print(("CONNECT accepted for FTP server at host " + command[1] + " and"
                                                                          " port " + command[2]))
         # FTP Outputs

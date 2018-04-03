@@ -3,7 +3,6 @@
 # Characters must adhere to ascii standard
 # Commands are input as strings to standard in console in Linux environment
 # Correctness is output to standard output
-
 # Example:
 # Input:
 
