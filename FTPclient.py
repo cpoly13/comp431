@@ -75,6 +75,54 @@ def testServerPort(s):
 def error(token):
     print("ERROR -- " + token)
 
+def outPutServerResponse(s):
+    input = s
+    # Split by lines but keep ends to test CRLF token
+    ftpReplyLines = input.splitlines(keepends=True)
+
+    numberOfLines = len(ftpReplyLines)
+    currentLine = 0
+
+    while currentLine < numberOfLines:
+        ftpReplyLine = ftpReplyLines[currentLine]
+        sys.stdout.write(ftpReplyLine)
+
+        # input line without CRLF tokens
+        testString = ftpReplyLine[:-2]
+
+        commandGood = True
+        parameters = ftpReplyLine.split()
+
+        # Valid reply code tests
+        if not parameters[0].isdigit():
+            error("reply-code")
+            commandGood = False
+
+        elif int(parameters[0]) < 100 or int(parameters[0]) > 599:
+            error("reply-code")
+            commandGood = False
+
+        # Valid reply-text test
+        elif len(parameters) < 2:
+            error("reply-text")
+            commandGood = False
+
+        if commandGood:
+            for c in testString:
+                if ord(c) > 127 or (ord(c) == 13 or ord(c) == 10):
+                    error("reply-text")
+                    commandGood = False
+        # CRLF test
+        if commandGood:
+            if ord(ftpReplyLine[-1]) != 10 or ord(ftpReplyLine[-2]) != 13:
+                error("<CRLF>")
+                commandGood = False
+
+        if commandGood:
+            print("FTP reply " + parameters[0] + " accepted.  Text is : " + testString[4:])
+
+        currentLine += 1
+
 
 # Convert to decimal values contained in high and low order bytes of
 # 16 bit binary representation of an integer in 2's compliment
@@ -127,22 +175,35 @@ for line in sys.stdin:
             continue
         # Valid connection, set connection as active
         s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect(command[1],int(command[2]))
-        response=s.recv(4096)
-        responseString=response.decode()
+        while True:
+            try:
+                s.connect((command[1],int(command[2])))
+                response=s.recv(4096)
+                responseString=response.decode()
+                print(("CONNECT accepted for FTP server at host " + command[1] + " and"
+                                                                                 " port " + command[2]))
+                outPutServerResponse(responseString)
+                connected = True
 
-        connected = True
+                while True:
+                    #dostuff
+                    print("do stuff")
+                    break
+            except:
+                print("CONNECT failed")
+                connected=False
+                break
 
-        print(("CONNECT accepted for FTP server at host " + command[1] + " and"
-                                                                         " port " + command[2]))
-        # FTP Outputs
-        sys.stdout.write("USER anonymous\r\n")
-        sys.stdout.write("PASS guest@\r\n")
-        sys.stdout.write("SYST\r\n")
-        sys.stdout.write("TYPE I\r\n")
 
-        #reset port number on each new connection
-        portNumber = 8000
+        if connected == True:
+            # FTP Outputs
+            sys.stdout.write("USER anonymous\r\n")
+            sys.stdout.write("PASS guest@\r\n")
+            sys.stdout.write("SYST\r\n")
+            sys.stdout.write("TYPE I\r\n")
+
+            #reset port number on each new connection
+            portNumber = 8000
 
     # GET command tests and outputs
     elif command[0] == "GET":
